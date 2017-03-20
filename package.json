@@ -1,0 +1,65 @@
+{
+  "name": "wiki-js",
+  "version": "0.0.1",
+  "description": "Simple personal nodejs project to learn about angular2 and typescript",
+  "main": "dist/server/wiki.js",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nicolas Berbiche",
+  "email": "nic.berbiche@gmail.com",
+  "homepage": "https://github.com/berbiche/wiki-js/readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/berbiche/wiki-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/berbiche/wiki-js/issues",
+    "email": "nic.berbiche@gmail.com"
+  },
+  "dependencies": {
+    "@angular/common": "^2.4.10",
+    "@angular/core": "^2.4.10",
+    "@angular/forms": "^2.4.10",
+    "@angular/http": "^2.4.10",
+    "@angular/material": "^2.0.0-beta.2",
+    "@angular/platform-browser": "^2.4.10",
+    "@angular/platform-browser-dynamic": "^2.4.10",
+    "@angular/router": "^3.4.10",
+    "body-parser": "^1.17.1",
+    "compression": "^1.6.2",
+    "core-js": "^2.4.1",
+    "express": "^4.15.2",
+    "gulp-help": "^1.6.1",
+    "run-sequence": "^1.2.2",
+    "rxjs": "^5.2.0",
+    "systemjs": "^0.20.10",
+    "ui-router-ng2": "^1.0.0-beta.4",
+    "zone.js": "^0.8.4"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.16.0",
+    "@types/colors": "^1.1.1",
+    "@types/del": "^2.2.32",
+    "@types/express": "^4.0.35",
+    "@types/gulp": "^4.0.2",
+    "@types/gulp-concat": "0.0.30",
+    "@types/gulp-inject": "0.0.31",
+    "@types/gulp-sass": "0.0.30",
+    "@types/gulp-typescript": "0.0.33",
+    "@types/node": "^7.0.8",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-inject": "^4.2.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-typescript": "^3.1.6",
+    "gulp-util": "^3.0.8",
+    "gulp-watch": "^4.3.11",
+    "protractor": "^5.1.1",
+    "tslint": "^4.5.1",
+    "typescript": "^2.2.1"
+  }
+}

@@ -1,0 +1,13 @@
+logs
+npm-debug.log
+debug.log
+pids
+*.pid
+node_modules
+bower_components
+dist
+src/**/*.js
+.svn
+.git
+CVS
+.vscode/settings.json
