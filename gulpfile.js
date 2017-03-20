@@ -47,12 +47,14 @@ gulp.task('clean:server', false, () => {
 /////////////////////////
 // Compile the typescript code of src
 gulp.task('compile:js', false, () => {
-    let result = tsSrc.src();
+    let result = tsSrc.src()
+        .pipe(tsSrc());
     return result.js.pipe(gulp.dest('dist/src'));
 });
 // Compile the typescript for the server to dist/server
 gulp.task('compile:server', false, () => {
-    let result = tsServer.src();
+    let result = tsServer.src()
+        .pipe(tsServer());
     return result.js.pipe(gulp.dest('dist/server'));
 });
 // Compile the sass to dist/src/app.css
@@ -114,16 +116,15 @@ gulp.task('build:server', false, (cb) => {
     run('clean:server', 'compile:server', cb);
 });
 // Build the project
-gulp.task('build', 'Build the application', () => {
-    run('clean',
-        [
+gulp.task('build', 'Build the application', (cb) => {
+    run('clean', [
             'compile:server',
-            'compile:client',
+            'compile:js',
             'compile:sass',
             'copy:libs',
             'copy:html',
             'inject:libs'
-        ]);
+        ], 'run', cb);
 });
 
 /////////////////////////
@@ -131,13 +132,40 @@ gulp.task('build', 'Build the application', () => {
 /////////////////////////
 // Run the application
 gulp.task('run', 'Run the application and watch for changes', ['build:server'], () => {
-    const timer;
+    const self = {
+        'stdout': (data) => {
+            gutil.log(colors.green('[server] ')+ colors.blue(data));
+        },
+        'stderr': (err) => {
+            gutil.log(colors.green('[server] ') + colors.red(err));
+        },
+        'error': (err) => {
+            gutil.log(colors.red(err));
+            kill();
+        },
+        'exit': (code, sig) => {
+            gutil.log(colors.green('[server] ') +
+                'exited with: ' +
+                colors.blue('[code => %d, sig => %s]'), code, sig);
+            self.timer && clearTimeout(self.timer);
+            removeEvent();
+            server = undefined;
+            //if the error code or sig is not null exit the process
+            if (code !== 0 || sig !== null) {
+                process.exit(1);
+            }
+            // else restart the server
+            start();
+        },
+        'timer': undefined
+    };
+
     function start() {
         // create a child_process running the express server
         server = spawn(
             'node',
-            ['dist/server/app.js'],
-            {'cwd': path.resolve('dist/server'), 'env': process.env}
+            ['dist/server/wiki.js'],
+            {'env': process.env}
         );
         setEvent();
     }
@@ -153,7 +181,7 @@ gulp.task('run', 'Run the application and watch for changes', ['build:server'], 
         // kill the child process
         if (server) {
             server.kill('SIGTERM');
-            timer = setTimeout(() => {
+            self.timer = setTimeout(() => {
                 server.kill('SIGKILL'); //die fucker
                 removeEvent();
                 server = undefined;
@@ -163,46 +191,26 @@ gulp.task('run', 'Run the application and watch for changes', ['build:server'], 
 
     function removeEvent() {
         if (server) {
-            server.stdout.removeListener('data');
-            server.stderr.removeListener('err');
-            server.removeListener('exit');
-            server.removeListener('error');
+            server.stdout.removeListener('data', self.stdout);
+            server.stderr.removeListener('err', self.stderr);
+            server.removeListener('exit', self.exit);
+            server.removeListener('error', self.error);
         }
     }
 
     function setEvent() {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
-
-        server.stdout.on('data', (data) => {
-            gutil.log(colors.green('[server]')+ colors.blue(data));
-        });
-
-        server.stderr.on('data', (err) => {
-            gutil.log(colors.green('[server]') + colors.red(err));
-        });
-
+        server.stdout.on('data', self.stdout);
+        server.stderr.on('data', self.stderr);
         // when the server exist
-        server.once('exit', (code, sig) => {
-            gutil.log(colors.green('[server]') +
-                'exited with: ' +
-                colors.blue('[code => %d, sig => %s]', code, sig));
-            if (timer) {
-                clearTimeout(timer);
-            }
-            removeEvent();
-            server = undefined;
-        });
-
+        server.once('exit', self.exit);
         // when the server has a problem
-        server.once('error', (err) => {
-            gutil.log(colors.red(err));
-            kill();
-        });
+        server.once('error', self.error);
     }
 
     if (server === undefined) {
-        gutil.log(colors.blue('Starting the server'));
+        gutil.log(colors.green('[server] ') + 'Starting');
         start();
     } else {
         restart();
