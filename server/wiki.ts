@@ -1,13 +1,14 @@
-import * as express from 'express';
+import * as express         from 'express';
 import { json, urlencoded } from 'body-parser';
-import * as path from 'path';
-import * as routes from './routes/routes';
-const compression = require('compression');
-const config = require('../config.json');
+import * as path            from 'path';
+import * as routes          from './routes/routes';
+import * as compression     from 'compression';
+const config = require('../../config.json'); // since we are in dist/server
 
 const app: express.Application = express();
 
 app.disable('x-powered-by');
+// app.use();
 app.use(json());
 app.use(compression());
 app.use(urlencoded({ 'extended': true }));
@@ -19,12 +20,14 @@ app.use(express.static(path.join(__dirname, 'dist/lib')));
 // setting up the routes that will be used by the application
 // app.use('/login', routes.loginRouter);
 app.use('/article', routes.articleRouter);
-app.get('/', function (req: Request, res: Response) {
-    res.sendFile('index.html', { 'root': '../dist/src'});
+// app.use('*', routes.defaultRouter);
+app.use(function (req, res) {
+    res.sendFile(path.resolve(__dirname, '../../src/index.html'));
 });
-app.use('*', routes.defaultRouter);
 
 const server = app.listen(config.port, () => {
-    const host: string = server.address().address;
-    console.log('Express server running at http://%s:%d/ in %s mode', host, config.port, app.settings.env);
+    console.log('Express server running at http://%s:%d/ in %s mode',
+        'localhost',
+        config.port,
+        app.settings.env);
 });

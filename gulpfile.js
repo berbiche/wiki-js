@@ -4,6 +4,7 @@ const del    = require('del');
 const fs     = require('fs');
 const gulp   = require('gulp-help')(require('gulp'), {'hideEmpty': true});
 const concat = require('gulp-concat');
+// const debug  = require('gulp-debug');
 const inject = require('gulp-inject');
 const sass   = require('gulp-sass');
 const ts     = require('gulp-typescript');
@@ -15,9 +16,6 @@ const tsSrc    = ts.createProject('src/tsconfig.json');
 const tsServer = ts.createProject('server/tsconfig.json');
 const colors   = gutil.colors;
 
-// The instance of express server
-let server = undefined;
-
 /////////////////////////
 /*     Clean tasks     */
 /////////////////////////
@@ -27,7 +25,7 @@ gulp.task('clean', 'Clean the dist directory of its content', () => {
 });
 // Clean the css only
 gulp.task('clean:css', false, () => {
-    return del(['dist/src/app.css']);
+    return del(['dist/src/app/base.css']);
 });
 // Clean the html
 gulp.task('clean:html', false, () => {
@@ -53,7 +51,7 @@ gulp.task('compile:js', false, () => {
 });
 // Compile the typescript for the server to dist/server
 gulp.task('compile:server', false, () => {
-    let result = tsServer.src()
+    let result = gulp.src('server/**/*.ts')
         .pipe(tsServer());
     return result.js.pipe(gulp.dest('dist/server'));
 });
@@ -61,16 +59,16 @@ gulp.task('compile:server', false, () => {
 gulp.task('compile:sass', false, () => {
     return gulp.src('src/styles/base.scss')
         .pipe(sass.sync({'outputStyle': 'compressed'}))
-        .pipe(gulp.dest('dist/src/app.css'));
+        .pipe(gulp.dest('dist/src/css'));
 });
 
 /////////////////////////
 /*      Copy tasks     */
 /////////////////////////
 // Copy the required libraries to dist/lib
-gulp.task('copy:libs', false, () => {
+gulp.task('copy:lib', false, () => {
     if (fs.existsSync('dist/lib')) {
-        gutil.log(colors.green('Skipping copy:libs -> dist/lib already exists'));
+        gutil.log(colors.green('Skipping copy:lib -> dist/lib already exists'));
         return;
     }
     return gulp.src([
@@ -90,10 +88,11 @@ gulp.task('copy:html', false, () => {
         .pipe(gulp.dest('dist/src'));
 });
 // Inject javascript libraries in index.html
-gulp.task('inject:libs', false, () => {
-    let target = gulp.src('dist/src/index.html');
-    let source = gulp.src('dist/libs/*.js', {'read': false});
-    return target.pipe(inject(source))
+gulp.task('inject:lib', false, ['copy:lib'], () => {
+    let target = gulp.src('./dist/src/index.html');
+    let source = gulp.src('./dist/lib/**/*.js', {'read': false});
+    return target
+        .pipe(inject(source, {'starttag': '<!-- inject:lib -->'}))
         .pipe(gulp.dest('dist/src'));
 });
 
@@ -110,10 +109,10 @@ gulp.task('build:js', false, (cb) => {
 });
 // Replace the html with the new html of src
 gulp.task('build:html', false, (cb) => {
-    run('clean:html', 'copy:html', 'inject:libs', cb);
+    run('clean:html', 'copy:html', 'inject:lib', cb);
 });
 gulp.task('build:server', false, (cb) => {
-    run('clean:server', 'compile:server', cb);
+    run('clean:server', 'compile:server', 'run', cb);
 });
 // Build the project
 gulp.task('build', 'Build the application', (cb) => {
@@ -121,44 +120,67 @@ gulp.task('build', 'Build the application', (cb) => {
             'compile:server',
             'compile:js',
             'compile:sass',
-            'copy:libs',
-            'copy:html',
-            'inject:libs'
-        ], 'run', cb);
+            'copy:lib',
+            'copy:html'
+        ],
+        'inject:lib', 'run', cb);
+});
+
+/////////////////////////
+/*        Watch        */
+/////////////////////////
+// Watch for changes
+gulp.task('watch', false, () => {
+    gulp.watch('src/**/*.scss', ['build:sass']);
+    gulp.watch('src/**/*.ts', ['build:js']);
+    gulp.watch('src/**/*.html', ['build:html']);
+    gulp.watch('server/**/*.ts', () => { run('build:server', 'watch'); });
 });
 
 /////////////////////////
 /*         Run         */
 /////////////////////////
 // Run the application
-gulp.task('run', 'Run the application and watch for changes', ['build:server'], () => {
-    const self = {
-        'stdout': (data) => {
-            gutil.log(colors.green('[server] ')+ colors.blue(data));
-        },
-        'stderr': (err) => {
-            gutil.log(colors.green('[server] ') + colors.red(err));
-        },
-        'error': (err) => {
-            gutil.log(colors.red(err));
-            kill();
-        },
-        'exit': (code, sig) => {
-            gutil.log(colors.green('[server] ') +
-                'exited with: ' +
-                colors.blue('[code => %d, sig => %s]'), code, sig);
-            self.timer && clearTimeout(self.timer);
-            removeEvent();
-            server = undefined;
-            //if the error code or sig is not null exit the process
-            if (code !== 0 || sig !== null) {
-                process.exit(1);
-            }
-            // else restart the server
-            start();
-        },
-        'timer': undefined
-    };
+gulp.task('run', 'Run the application and watch for changes', (cb) => {
+    run('run:express', 'watch', cb);
+});
+// The instance of express server
+let server = undefined;
+let serverTimer = undefined;
+gulp.task('run:express', false, () => {
+    if (server === undefined) {
+        gutil.log(colors.green('[server] ') + 'Starting');
+        start();
+    } else {
+        restart();
+    }
+
+    // Event handlers
+    function stdout(data) {
+        gutil.log(colors.green('[server] ') + colors.blue(data));
+    }
+    function stderr(data) {
+        gutil.log(colors.green('[server] ') + colors.red(data));
+    }
+    function error(err) {
+        if (err instanceof Error)
+            throw err;
+        gutil.log(colors.red(err));
+        kill();
+    }
+    function exit(code, sig) {
+        gutil.log(colors.green('[server] ') +
+            'exited with: ' +
+            colors.red('[code => %d, sig => %s]'), code, sig);
+        serverTimer && clearTimeout(serverTimer);
+        removeEvent();
+        server = undefined;
+        //if the error code or sig is not null exit the process
+        if (code !== 0) process.exit(1);
+        // else restart the server
+        start();
+    }
+    // end Event handlers
 
     function start() {
         // create a child_process running the express server
@@ -172,8 +194,8 @@ gulp.task('run', 'Run the application and watch for changes', ['build:server'], 
 
     function restart() {
         // restart the child_process
-        gutil.log(colors.blue('Restarting the server'));
         kill();
+        gutil.log(colors.blue('Restarting the server'));
         start();
     }
 
@@ -181,43 +203,31 @@ gulp.task('run', 'Run the application and watch for changes', ['build:server'], 
         // kill the child process
         if (server) {
             server.kill('SIGTERM');
-            self.timer = setTimeout(() => {
+            serverTimer = setTimeout(() => {
                 server.kill('SIGKILL'); //die fucker
                 removeEvent();
                 server = undefined;
-            }, 500);
+            }, 2000);
         }
     }
 
     function removeEvent() {
         if (server) {
-            server.stdout.removeListener('data', self.stdout);
-            server.stderr.removeListener('err', self.stderr);
-            server.removeListener('exit', self.exit);
-            server.removeListener('error', self.error);
+            server.stdout.removeListener('data', stdout);
+            server.stderr.removeListener('err', stderr);
+            server.removeListener('exit', exit);
+            server.removeListener('error', error);
         }
     }
 
     function setEvent() {
         server.stdout.setEncoding('utf8');
         server.stderr.setEncoding('utf8');
-        server.stdout.on('data', self.stdout);
-        server.stderr.on('data', self.stderr);
+        server.stdout.on('data', stdout);
+        server.stderr.on('data', stderr);
         // when the server exist
-        server.once('exit', self.exit);
+        server.once('exit', exit);
         // when the server has a problem
-        server.once('error', self.error);
+        server.once('error', error);
     }
-
-    if (server === undefined) {
-        gutil.log(colors.green('[server] ') + 'Starting');
-        start();
-    } else {
-        restart();
-    }
-
-    gulp.watch('src/**/*.scss', ['build:sass']);
-    gulp.watch('src/**/*.ts', ['build:js']);
-    gulp.watch('src/**/*.html', ['build:html']);
-    gulp.watch('server/**/*.ts', ['build:server']);
 });
