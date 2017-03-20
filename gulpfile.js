@@ -1,4 +1,5 @@
 "use strict";
+const spawn  = require('child_process').spawn;
 const del    = require('del');
 const fs     = require('fs');
 const gulp   = require('gulp-help')(require('gulp'), {'hideEmpty': true});
@@ -7,11 +8,15 @@ const inject = require('gulp-inject');
 const sass   = require('gulp-sass');
 const ts     = require('gulp-typescript');
 const gutil  = require('gulp-util');
+const path   = require('path');
 const run    = require('run-sequence');
 
 const tsSrc    = ts.createProject('src/tsconfig.json');
 const tsServer = ts.createProject('server/tsconfig.json');
 const colors   = gutil.colors;
+
+// The instance of express server
+let server = undefined;
 
 /////////////////////////
 /*     Clean tasks     */
@@ -106,7 +111,7 @@ gulp.task('build:html', false, (cb) => {
     run('clean:html', 'copy:html', 'inject:libs', cb);
 });
 gulp.task('build:server', false, (cb) => {
-    run('clean:server', 'compile:server', 'run', cb);
+    run('clean:server', 'compile:server', cb);
 });
 // Build the project
 gulp.task('build', 'Build the application', () => {
@@ -122,17 +127,89 @@ gulp.task('build', 'Build the application', () => {
 });
 
 /////////////////////////
-/*    Other  things    */
+/*         Run         */
 /////////////////////////
 // Run the application
-gulp.task('run', 'Run the application', () => {
+gulp.task('run', 'Run the application and watch for changes', ['build:server'], () => {
+    const timer;
+    function start() {
+        // create a child_process running the express server
+        server = spawn(
+            'node',
+            ['dist/server/app.js'],
+            {'cwd': path.resolve('dist/server'), 'env': process.env}
+        );
+        setEvent();
+    }
 
-});
-// Run & watch for changes to the project
-gulp.task('watch', 'Run the application and watch for changes', (cb) => {
+    function restart() {
+        // restart the child_process
+        gutil.log(colors.blue('Restarting the server'));
+        kill();
+        start();
+    }
+
+    function kill() {
+        // kill the child process
+        if (server) {
+            server.kill('SIGTERM');
+            timer = setTimeout(() => {
+                server.kill('SIGKILL'); //die fucker
+                removeEvent();
+                server = undefined;
+            }, 500);
+        }
+    }
+
+    function removeEvent() {
+        if (server) {
+            server.stdout.removeListener('data');
+            server.stderr.removeListener('err');
+            server.removeListener('exit');
+            server.removeListener('error');
+        }
+    }
+
+    function setEvent() {
+        server.stdout.setEncoding('utf8');
+        server.stderr.setEncoding('utf8');
+
+        server.stdout.on('data', (data) => {
+            gutil.log(colors.green('[server]')+ colors.blue(data));
+        });
+
+        server.stderr.on('data', (err) => {
+            gutil.log(colors.green('[server]') + colors.red(err));
+        });
+
+        // when the server exist
+        server.once('exit', (code, sig) => {
+            gutil.log(colors.green('[server]') +
+                'exited with: ' +
+                colors.blue('[code => %d, sig => %s]', code, sig));
+            if (timer) {
+                clearTimeout(timer);
+            }
+            removeEvent();
+            server = undefined;
+        });
+
+        // when the server has a problem
+        server.once('error', (err) => {
+            gutil.log(colors.red(err));
+            kill();
+        });
+    }
+
+    if (server === undefined) {
+        gutil.log(colors.blue('Starting the server'));
+        start();
+    } else {
+        restart();
+    }
+
     gulp.watch('src/**/*.scss', ['build:sass']);
     gulp.watch('src/**/*.ts', ['build:js']);
     gulp.watch('src/**/*.html', ['build:html']);
     gulp.watch('server/**/*.ts', ['build:server']);
-    cb();
 });
