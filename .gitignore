@@ -10,4 +10,4 @@ src/**/*.js
 .svn
 .git
 CVS
-.vscode/settings.json
+.vscode
