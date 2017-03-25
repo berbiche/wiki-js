@@ -11,19 +11,40 @@ const sass    = require('gulp-sass');
 const ts      = require('gulp-typescript');
 const gutil   = require('gulp-util');
 const newer   = require('gulp-newer');
+const merge   = require('merge-stream');
 const path    = require('path');
 const run     = require('run-sequence');
 
 const tsSrc    = ts.createProject('src/tsconfig.json');
 const tsServer = ts.createProject('server/tsconfig.json');
-const colors   = gutil.colors;
+const chalk    = gutil.colors;
+
+// The instance of the Express server
+// Used to kill the process
+let server = undefined;
+
+/////////////////////////
+/*        Other        */
+/////////////////////////
+// On process exit, kill the server
+process.once('exit', exit);
+// Same as above
+process.once('SIGINT', exit);
+// Same as above
+process.once('SIGBREAK', exit);
+
+function exit(code) {
+    server && server.kill('SIGKILL');
+    code && gutil.log('Exiting process with code ' + chalk.red(`${code}`));
+    process.exit();
+}
 
 /////////////////////////
 /*     Clean task      */
 /////////////////////////
 // Clean up the dist folder
 gulp.task('clean', 'Clean the dist directory of its content', () => {
-    return del(['dist'], { 'ignore': ['dist', 'dist/libs'] });
+    return del(['dist/*', '!dist/lib']);
 });
 
 /////////////////////////
@@ -58,20 +79,28 @@ gulp.task('compile:sass', false, () => {
 // Copy the required libraries to dist/lib
 gulp.task('copy:lib', false, () => {
     if (fs.existsSync('dist/lib')) {
-        gutil.log(colors.green('Skipping copy:lib -> dist/lib already exists'));
-        return;
+        gutil.log(`Skipping ${chalk.cyan("'copy:lib'")} -> `+
+            `${chalk.green("'dist/lib'")} already exists`);
+        cb();
     }
-    return gulp.src([
+
+    let tmp1 = gulp.src([
         '@angular/**/bundles/*.min.js',
         '@angular/material/bundles/*.js',
+        '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
         'ui-router-ng2/_bundles/ui-router-ng2.min.js',
+        'reflect-metadata/Reflect.js',
         'zone.js/dist/zone.min.js',
         'core-js/client/core.min.js',
-        'systemjs/dist/system.js',
-        'rxjs/bundles/Rx.min.js'
+        'systemjs/dist/system.js'
     ], { 'cwd': 'node_modules/**' })
     .pipe(flatten())
     .pipe(gulp.dest('dist/lib/'));
+
+    let tmp2 = gulp.src('rxjs/**/*.js', { 'cwd': 'node_modules/**' })
+        .pipe(gulp.dest('dist/lib/'));
+
+    return merge(tmp1, tmp2);
 });
 // Copy the html files to dist/src/**/
 gulp.task('copy:html', false, () => {
@@ -87,24 +116,22 @@ gulp.task('copy:html', false, () => {
 // Build the project
 gulp.task('build', 'Build the application', (cb) => {
     run('clean', [
-            'compile:server',
-            'compile:js',
-            'compile:sass',
-            'copy:lib',
-            'copy:html'
-        ],
-        'run', cb);
+        'compile:server',
+        'compile:js',
+        'compile:sass',
+        'copy:lib',
+        'copy:html'
+    ],  cb);
 });
-
 /////////////////////////
 /*        Watch        */
 /////////////////////////
 // Watch for changes
-gulp.task('watch', false, () => {
-    gulp.watch('src/**/*.scss', ['compile:sass']);
-    gulp.watch('src/**/*.ts', ['compile:js']);
-    gulp.watch('src/**/*.html', ['copy:html']);
-    gulp.watch('server/**/*.ts', () => { run('compile:server', 'run'); });
+gulp.task('watch', false, (cb) => {
+    gulp.watch('src/**/*.scss', ['compile:sass'], cb);
+    gulp.watch('src/**/*.ts', ['compile:js'], cb);
+    gulp.watch('src/**/*.html', ['copy:html'], cb);
+    gulp.watch('server/**/*.ts', () => { run('compile:server', 'run'); }, cb);
 });
 
 /////////////////////////
@@ -112,12 +139,8 @@ gulp.task('watch', false, () => {
 /////////////////////////
 // Run the application
 gulp.task('run', 'Run the application and watch for changes', (cb) => {
-    run('run:express', 'watch', cb);
+    return run('run:express', 'watch', cb);
 });
-
-
-// The instance of the Express server
-let server = undefined;
 // starts the server and handles process exit
 gulp.task('run:express', false, () => {
     if (server === undefined) {
@@ -126,32 +149,23 @@ gulp.task('run:express', false, () => {
         restart();
     }
 
-    // On process exit, kill the server
-    process.on('exit', (code) => {
-        if (server) {
-            server.kill('SIGKILL');
-            removeEvent();
-        }
-        gutil.log(colors.green('Closed the process with code ') + colors.red(`${code}`));
-    });
-
     // Event handlers
     function stdout(data) {
-        gutil.log(colors.green('[server] ') + colors.blue(typeof data === 'string' ? data.trim() : data));
+        gutil.log(chalk.green('[server] ') + chalk.blue(typeof data === 'string' ? data.trim() : data));
     }
     function stderr(data) {
-        gutil.log(colors.green('[server] ') + colors.red(typeof data === 'string' ? data.trim() : data));
+        gutil.log(chalk.green('[server] ') + chalk.red(typeof data === 'string' ? data.trim() : data));
     }
     function error(err) {
         if (err instanceof Error)
             throw err;
-        gutil.log(colors.red(err));
+        gutil.log(chalk.red(err));
         kill();
     }
     function exit(code, sig) {
-        gutil.log(colors.green('[server] ') +
-            'exited with: ' +
-            colors.red('[code => %d, sig => %s]'), code, sig);
+        gutil.log(chalk.green('[server] ') +
+            'Exited with: ' +
+            chalk.red('[code => %d, sig => %s]'), code, sig);
         removeEvent();
         server = undefined;
         //if the error code or sig is not null exit the process
@@ -163,7 +177,6 @@ gulp.task('run:express', false, () => {
 
     function start() {
         // create a child_process running the express server
-        gutil.log(colors.green('[server] ') + 'Starting');
         server = spawn(
             'node',
             ['dist/server/wiki.js'],
@@ -178,7 +191,7 @@ gulp.task('run:express', false, () => {
     function restart() {
         // restart the child_process
         kill();
-        gutil.log(colors.blue('Restarting the server'));
+        gutil.log(chalk.green('[server] ') + chalk.blue('Restarting the server'));
         start();
     }
 
