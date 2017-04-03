@@ -1,4 +1,5 @@
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { WikiModule } from './app/wiki.module';
+import { AppModule } from './app/app.module';
 
-platformBrowserDynamic().bootstrapModule(WikiModule);
+platformBrowserDynamic().bootstrapModule(AppModule)
+    .catch(err => console.error(err));
