@@ -2,8 +2,8 @@
 A simple [Angular](https://github.com/angular/angular)(2) + [Express](https://github.com/expressjs/express) + [Gulp](https://github.com/gulpjs/gulp) project.  
 The purpose of this project is to "ajaxify" an existing project and rewrite it under typescript.  
 This project is a simple wiki that implements crud, l10n and basic authentication.
-## Requirements
-* Node 7.x.x (has not be tested under older versions)
+## Requirements (has not be tested under older versions)
+* Node 7.x.x
 * npm 3.x.x
 ## Installation instruction
 ### Make sure you [meet the requirements](#requirements) beforehand
