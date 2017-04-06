@@ -21,7 +21,7 @@ app.use('/lib', express.static(path.join(__dir, prefix, locations.libraries), {'
 // setting up the routes that will be used by the application
 // app.use('/login', routes.loginRouter);
 app.use('/api/article', routes.articleRouter);
-app.use('/', routes.defaultRouter);
+app.use('/*', routes.defaultRouter);
 
 app.listen(config.server).once('listening', (): void => {
     process.send(`Express server running at http://localhost:${config.server.port}`
