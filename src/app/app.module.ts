@@ -4,9 +4,11 @@ import { HttpModule }       from '@angular/http';
 import { BrowserModule }    from '@angular/platform-browser';
 import { MaterialModule }   from '@angular/material';
 import { UIRouterModule }   from 'ui-router-ng2';
+import { ArticleModule }    from './article/article.module';
+import { UserModule }       from './user/user.module';
 import { AppComponent }     from './app.component';
-import { Routes }           from './states';
-import { uiRouterConfigFn } from './config/router.config';
+import { States }           from './app.states';
+import { uiRouterConfigFn } from './router.config';
 
 @NgModule({
     'imports': [
@@ -14,10 +16,13 @@ import { uiRouterConfigFn } from './config/router.config';
         BrowserModule,
         HttpModule,
         UIRouterModule.forRoot({
-            'states': Routes,
+            'states': States,
             'useHash': false,
-            'config': uiRouterConfigFn
-        })
+            'config': uiRouterConfigFn,
+            'otherwise': { 'state': 'article', 'params': {} }
+        }),
+        ArticleModule,
+        UserModule
     ],
     'declarations': [ AppComponent ],
     'bootstrap': [ AppComponent ]
