@@ -1,18 +1,19 @@
 import { NgModule }                from '@angular/core';
 import { HttpModule }              from '@angular/http';
 import { MaterialModule }          from '@angular/material';
-import { UIRouterModule }          from 'ui-router-ng2';
+import { ArticleRoutingModule }    from './article-routing.module';
 import { ArticleComponent }        from './article.component';
-import { ArticleDetailsComponent } from './articleDetail.component';
-import { ArticleService }          from './article.service';
-import { ArticleStates }           from './article.states'
+import { ArticleDetailsComponent } from './article-detail/article-detail.component';
 
 @NgModule({
     'imports': [
         MaterialModule,
-        HttpModule
+        HttpModule,
+        ArticleRoutingModule,
     ],
-    'providers': [ ArticleService ],
-    'declarations': [ ArticleComponent, ArticleDetailsComponent ]
+    'declarations': [
+        ArticleComponent,
+        ArticleDetailsComponent
+    ]
 })
 export class ArticleModule { }

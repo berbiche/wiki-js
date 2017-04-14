@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
 
 @Component({
-    'selector': 'article',
-    'template': `
-        <h1>Article component</h1>
-    `
+    'selector': 'section',
+    'moduleId': module.id,
+    'templateUrl': 'article.component.html'
 })
 export class ArticleComponent { }
