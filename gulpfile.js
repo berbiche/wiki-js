@@ -93,8 +93,6 @@ function copy_lib(cb) {
     let tmp2 = gulp.src([
             '@angular/**/bundles/*.min.js',
             '@angular/material/bundles/*.js',
-            '@angular/material/core/theming/prebuilt/deeppurple-amber.css',
-            'ui-router-ng2/_bundles/ui-router-ng2.min.js',
             'reflect-metadata/Reflect.js',
             'zone.js/dist/zone.min.js',
             'core-js/client/core.min.js',
@@ -180,11 +178,7 @@ class ServerWrapper {
 
 run_express.description = 'Start the Express server';
 function run_express(cb) {
-    if (ServerWrapper.server === undefined) {
-        ServerWrapper.start();
-    } else {
-        ServerWrapper.restart();
-    }
+    ServerWrapper.server && ServerWrapper.restart() || ServerWrapper.start();
     cb();
     return;
 };

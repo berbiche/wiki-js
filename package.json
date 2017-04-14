@@ -1,13 +1,10 @@
 {
   "name": "wiki-js",
   "version": "0.0.1",
-  "description": "Simple personal nodejs project to learn about angular2 and typescript",
+  "description": "Simple personal nodejs project to learn about angular 4 and typescript",
   "main": "dist/server/wiki.js",
   "private": true,
   "license": "ISC",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Nicolas Berbiche",
   "email": "nic.berbiche@gmail.com",
   "homepage": "https://github.com/berbiche/wiki-js/readme",
@@ -20,23 +17,25 @@
     "email": "nic.berbiche@gmail.com"
   },
   "dependencies": {
-    "@angular/common": "^4.0.1",
-    "@angular/compiler": "^4.0.1",
-    "@angular/core": "^4.0.1",
-    "@angular/forms": "^4.0.1",
-    "@angular/http": "^4.0.1",
+    "@angular/animations": "^4.0.2",
+    "@angular/common": "^4.0.2",
+    "@angular/compiler": "^4.0.2",
+    "@angular/core": "^4.0.2",
+    "@angular/forms": "^4.0.2",
+    "@angular/http": "^4.0.2",
     "@angular/material": "^2.0.0-beta.2",
-    "@angular/platform-browser": "^4.0.1",
-    "@angular/platform-browser-dynamic": "^4.0.1",
+    "@angular/platform-browser": "^4.0.2",
+    "@angular/platform-browser-dynamic": "^4.0.2",
+    "@angular/router": "^4.0.2",
     "body-parser": "^1.17.1",
     "compression": "^1.6.2",
     "core-js": "^2.4.1",
     "express": "^4.15.2",
+    "helmet": "^3.5.0",
     "reflect-metadata": "^0.1.10",
     "rxjs": "^5.2.0",
     "systemjs": "^0.20.10",
-    "typescript": "^2.2.1",
-    "ui-router-ng2": "github:ui-router/ng2#angular4-artifacts",
+    "typescript": "^2.3.0",
     "zone.js": "^0.8.4"
   },
   "devDependencies": {
@@ -68,5 +67,8 @@
     "protractor": "^5.1.1",
     "run-sequence": "^1.2.2",
     "tslint": "^4.5.1"
+  },
+  "engines": {
+    "node": ">= 7.0.0"
   }
 }

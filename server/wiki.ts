@@ -2,6 +2,7 @@ import * as express         from 'express';
 import { json, urlencoded } from 'body-parser';
 import * as path            from 'path';
 import * as compression     from 'compression';
+// import * as helmet          from 'helmet';
 import * as routes          from './routes/routes';
 const __dir: string = process.cwd(); // process current directory
 const config = require(path.join(__dir, 'config.json'));
@@ -9,7 +10,21 @@ const { prefix, locations } = config.output;
 
 const app: express.Application = express();
 
-app.disable('x-powered-by');
+// app.use(helmet({
+//     'contentSecurityPolicy': {
+//         'directives': {
+//             'defaultSrc': ["'self'"],
+//             'frameAncestors': ["'self'"],
+//             'scriptSrc': 'unsafe-inline'
+//         }
+//     },
+//     'dnsPrefetchControl': { 'allow': false },
+//     'hsts': {
+//         'maxAge': 31536000,
+//         'includeSubDomains': true,
+//     },
+//     'referrerPolicy': { 'policy': 'same-origin' }
+// }));
 app.use(json());
 app.use(compression());
 app.use(urlencoded({ 'extended': true }));
