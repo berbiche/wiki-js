@@ -1,30 +1,34 @@
-import { NgModule }         from '@angular/core';
-// import { Form }             from '@angular/forms';
-import { HttpModule }       from '@angular/http';
-import { BrowserModule }    from '@angular/platform-browser';
-import { MaterialModule }   from '@angular/material';
-import { UIRouterModule }   from 'ui-router-ng2';
-import { ArticleModule }    from './article/article.module';
-import { UserModule }       from './user/user.module';
-import { AppComponent }     from './app.component';
-import { States }           from './app.states';
-import { uiRouterConfigFn } from './router.config';
+import { NgModule }                from '@angular/core';
+import { CommonModule }            from '@angular/common';
+// import { Form }                 from '@angular/forms';
+import { HttpModule }              from '@angular/http';
+import { BrowserModule }           from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MaterialModule }          from '@angular/material';
+
+import { AppRoutingModule }      from './app.routes';
+import { AppComponent }          from './app.component';
+import { ArticleService }        from './_services/article.service';
+import { UserModule }            from './user/user.module';
+import { ArticleModule }         from './article/article.module';
+import { ArticleDetailsResolve } from './article/article-detail/article.resolve';
 
 @NgModule({
     'imports': [
-        MaterialModule,
         BrowserModule,
         HttpModule,
-        UIRouterModule.forRoot({
-            'states': States,
-            'useHash': false,
-            'config': uiRouterConfigFn,
-            'otherwise': { 'state': 'article', 'params': {} }
-        }),
+        CommonModule,
+        BrowserAnimationsModule,
+        MaterialModule.forRoot(),
+        AppRoutingModule,
         ArticleModule,
         UserModule
     ],
     'declarations': [ AppComponent ],
+    'providers': [
+        ArticleService,
+        ArticleDetailsResolve
+    ],
     'bootstrap': [ AppComponent ]
 })
 export class AppModule { }

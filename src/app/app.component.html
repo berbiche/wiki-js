@@ -1,0 +1,25 @@
+<md-toolbar id="navigation-bar" color="primary">
+    <a md-button [routerLink]="['/']" class="toolbar-title">
+        <md-icon>dashboard</md-icon>
+        <span>Syndicate</span>
+    </a>
+    <a md-button [routerLink]="['/article']" routerLinkActive="panel-active">
+        <span>Articles</span>
+    </a>
+    <a md-button [routerLink]="['/user']" routerLinkActive="panel-active">
+        <span>User</span>
+    </a>
+    <span class="spacer"></span>
+
+    <a md-icon-button [mdMenuTriggerFor]="menu" class="md-no-focus">
+        <md-icon>more_vert</md-icon>
+    </a>
+
+    <md-menu #menu="mdMenu">
+    </md-menu>
+</md-toolbar>
+
+<md-progress-bar *ngIf="isLoading" class="mat-primary" role="progressbar" mode="indeterminate">
+</md-progress-bar>
+
+<router-outlet></router-outlet>

@@ -1,18 +1,31 @@
 import { Component } from '@angular/core';
-
+import {
+    Router,
+    Event as RouterEvent,
+    NavigationStart,
+    NavigationEnd,
+    NavigationError,
+    NavigationCancel
+} from '@angular/router';
 
 @Component({
-    'selector': 'wiki',
+    'selector': 'body',
     'moduleId': module.id,
-    'template':
-    `
-        <nav>
-            <md-toolbar color="primary">
-                <span><a uiSref="article" uiSrefActive="active">Articles</a></span>&nbsp;&nbsp;
-                <span><a uiSref="user" uiSrefActive="active">Users</a></span>
-            </md-toolbar>
-        </nav>
-        <ui-view></ui-view>
-    `
+    'templateUrl': 'app.component.html'
 })
-export class AppComponent { }
+
+export class AppComponent {
+    public isLoading: boolean = false;
+
+    constructor(private router: Router) {
+        router.events.subscribe((event: RouterEvent) => {
+            if (event instanceof NavigationStart) {
+                this.isLoading = true;
+            } else if (event instanceof NavigationEnd ||
+                event instanceof NavigationError ||
+                event instanceof NavigationCancel) {
+                this.isLoading = false;
+            }
+        })
+    }
+}
