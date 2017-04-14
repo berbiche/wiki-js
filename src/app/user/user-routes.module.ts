@@ -8,7 +8,7 @@ import { AuthGuard }     from '../_guards/auth-guard.service';
 const UserRoutes: Routes = [
     {
         'path': 'user',
-        'component': UserComponent
+        'component': UserComponent,
     }
 ];
 

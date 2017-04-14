@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 
 @Component({
-    'template': '<h1>User component</h1>'
+    'selector': 'div',
+    'moduleId': module.id,
+    'templateUrl': 'user.component.html'
 })
 export class UserComponent { }

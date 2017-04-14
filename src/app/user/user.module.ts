@@ -1,15 +1,16 @@
-import {UIRouterModule}  from "ui-router-ng2";
-import {SharedModule}    from "../shared.module";
-import {NgModule}        from "@angular/core";
-import { UserComponent } from './user.component';
+import { NgModule } from '@angular/core';
+
+import { UserComponent }     from './user.component';
+import { UserRoutingModule } from './user-routes.module';
 
 /** The Bar NgModule */
 @NgModule({
   'imports': [
-    SharedModule
+    UserRoutingModule
   ],
-  'declarations': [
-      UserComponent
-  ]
+  'exports': [
+    UserRoutingModule
+  ],
+  'declarations': [ UserComponent ]
 })
 export class UserModule { }
